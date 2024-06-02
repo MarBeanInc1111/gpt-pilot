@@ -1,26 +1,28 @@
-{{ steps_list }}
-{% if issue_description -%}
-You wanted me to check this - `{{ issue_description }}` but there was a problem
-{%- else -%}
-Now, we need to debug this issue
-{%- endif -%}
-{% if command %} and we need to be able to execute `{{ command }}` successfully. {% endif %}.
-{% if user_input %}I looked into this issue. I want you to take my findings as important part of debugging this issue. Here are my findings:
-```
-{{ user_input }}
-```{% endif -%}
-I want you to create a list of steps that are needed to debug this issue.
+{% set error_message = "You wanted me to check this - `" ~ issue_description ~ "` but there was a problem" %}
+{% set success_message = "Now, we need to debug this issue" %}
+{% set command_message = "and we need to be able to execute `" ~ command ~ "` successfully." if command else '' %}
+{% set user_input_message = "I looked into this issue. I want you to take my findings as an important part of debugging this issue. Here are my findings:" ~ user_input ~ "" if user_input else '' %}
 
-Each step can be either:
+<h2>Debugging Steps</h2>
+<ol>
+  {% for step in steps_list %}
+    <li>
+      {% if step.type == 'command' %}
+        Run the following command: <code>{{ step.command }}</code> (current working directory is project root folder)
+      {% elif step.type == 'code_change' %}
+        Implement the following code change: <pre>{{ step.change }}</pre>
+      {% elif step.type == 'human_intervention' %}
+        Human intervention required: <pre>{{ step.instruction }}</pre>
+      {% endif %}
+      {% if step.check_if_fixed %}
+        Check if the issue is fixed.
+      {% endif %}
+    </li>
+  {% endfor %}
+</ol>
 
-* `command` - command to run (must be able to run on a {{ os }} machine, assume current working directory is project root folder)
-* `code_change` -  step will change the code and you need to thoroughly describe what needs to be implemented. I will implement the requested changes and let you know.
-* `human_intervention` - if you need the human to do something, use this type of step and explain in details what you want the human to do. NEVER use `human_intervention` for testing, as testing will be done separately by a dedicated QA after all the steps are done.
+<p>{{ execution_order }}</p>
 
-{{ execution_order }}
+<p>{{ file_size_limit }}</p>
 
-Also, make sure that at least the last step has `check_if_fixed` set to TRUE.
-
-{{ file_size_limit }}
-
-{# After this, you need to decide what to do next. You can rerun the command `{{ command }}` to check if the problem is fixed or run another command with `run_command` or change more code with `implement_code_changes`. #}
+<p>{{ user_input_message }}{{ error_message }}{{ success_message }}{{ command_message }}</p>
