@@ -24,7 +24,8 @@ def find_repo_root() -> str:
 
     # While we haven't reached the root of the filesystem...
     while dir != os.path.dirname(dir):
-        if os.path.exists(os.path.join(dir, ".git")):
+        git_dir = os.path.join(dir, ".git")
+        if os.path.exists(git_dir):
             break
         dir = os.path.dirname(dir)
     else:
@@ -40,6 +41,7 @@ def main():
     repo_dir = find_repo_root()
     if repo_dir is None:
         print("Could not find GPT Pilot: please run me from the repository root directory.")
+        return
 
     os.chdir(repo_dir)
 
@@ -52,27 +54,25 @@ def main():
         # Remove all items from the archive that aren't explictly whitelisted
         for item in os.listdir(tmp_dir):
             if item not in INCLUDE:
-                path = os.path.join(tmp_dir, item)
-                if os.path.isfile(path):
-                    os.remove(path)
+                item_path = os.path.join(tmp_dir, item)
+                if os.path.isfile(item_path):
+                    os.remove(item_path)
                 else:
-                    shutil.rmtree(path)
+                    shutil.rmtree(item_path)
 
         archive_path = os.path.abspath(os.path.join("..", "gpt-pilot-packaged.zip"))
         if os.path.exists(archive_path):
             os.remove(archive_path)
 
         with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for dpath, dirs, files in os.walk(tmp_dir):
+            for root, _, files in os.walk(tmp_dir):
                 for file in files:
-                    full_path = os.path.join(dpath, file)
+                    full_path = os.path.join(root, file)
                     if full_path != temp_archive_path:
                         rel_path = os.path.relpath(full_path, tmp_dir)
-                        print(rel_path)
                         zip_file.write(full_path, rel_path)
 
-        size = os.path.getsize(archive_path)
-        print(f"\nCreated: {archive_path} ({size // 1024} KB)")
+        print(f"Created: {archive_path}")
 
 
 if __name__ == "__main__":
