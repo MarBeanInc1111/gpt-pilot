@@ -1,9 +1,14 @@
-{% if running_processes -%}
+{% if running_processes %}
+<p>
 Note that the following processes are already running:
-
-{%- for key, data in running_processes.items() %}
-
-command_id: {{ key }}
+</p>
+<ul>
+{% for key, data in running_processes.items() %}
+<li>
+command_id: {{ key }}<br>
 command: {{ data[0] }}
-{%- endfor -%}
-{%- endif -%}
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+
