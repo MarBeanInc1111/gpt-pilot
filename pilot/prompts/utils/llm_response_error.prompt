@@ -1,5 +1,14 @@
-There was an error processing your response:
+{{ error|default('') }}
 
-{{ error }}
+{% if error %}
+    <p>There was an error processing your response: {{ error }}</p>
+{% endif %}
 
-Please think carefully and try again.
+<form method="post">
+    <!-- Add your form fields here -->
+    <button type="submit">Submit</button>
+</form>
+
+<script>
+// Add your JavaScript code here
+</script>
