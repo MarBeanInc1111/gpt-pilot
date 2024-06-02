@@ -1,2 +1,7 @@
-Write a list of commands that should be ran that will tell you if the implementation was successful. Write them in a JSON array where each item is a string with the following format:
-COMMAND: {command_that_needs_to_be_ran}
+[
+  "COMMAND: check_file_permissions.sh",
+  "COMMAND: run_unit_tests.sh",
+  "COMMAND: run_integration_tests.sh",
+  "COMMAND: check_code_coverage.sh",
+  "COMMAND: deploy_to_staging.sh"
+]
