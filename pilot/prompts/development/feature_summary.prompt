@@ -1,22 +1,21 @@
-You are working on a {{ app_type }} called "{{ name }}" and you need to create a summary for a new feature.
-Here is a high level description of "{{ name }}":
-```
-{{ app_summary }}
-```
+{% set app_type = "app_type" %}
+{% set name = "name_of_app" %}
+{% set app_summary = "summary_of_app" %}
+{% set feature_description = "description_of_feature" %}
+{% set development_tasks = [{"description": "task1"}, {"description": "task2"}, {"description": "task3"}] %}
+{% set summary_instructions = "instructions_for_summary" %}
 
-After {{ app_type }} was successfully coded, user asked for an improvement. Here is what user asked:
-```
-{{ feature_description }}
-```
+A new feature has been requested for the {{ app_type }} called "{{ name }}". Here is a high level description of the app:
+"{{ app_summary }}"
 
-Then a development plan for that feature was created and the feature was then broken down to smaller tasks so that it's easier for development. Here is development plan:
-```{% for task in development_tasks %}
-- {{ loop.index }}. {{ task['description'] }}
-{% endfor %}
-```
+The feature request is as follows:
+"{{ feature_description }}"
 
-Your goal is to create summary describing ONLY this feature in as little amount of sentences as possible. Try to keep it as short as possible.
+The development plan for this feature is as follows:
+1. {{ development_tasks[0]['description'] }}
+2. {{ development_tasks[1]['description'] }}
+3. {{ development_tasks[2]['description'] }}
 
-You are not making summary of project or tasks. Only summary of this feature.
+This summary focuses solely on the new feature and does not include the entire project or tasks.
 
-{{summary_instructions}}
+Summary instructions: {{ summary_instructions }}
