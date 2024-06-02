@@ -6,20 +6,73 @@
     <main role="main">
       <div class="container mt-5">
         <h2>Register</h2>
-        <form action="/auth/register" method="POST">
+        <form action="/auth/register" method="POST" novalidate>
           <div class="mb-3">
-            <input type="text" name="username" placeholder="Username" required class="form-control">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" name="username" placeholder="Username" required class="form-control" autocomplete="username" tabindex="1">
           </div>
           <div class="mb-3">
-            <input type="password" name="password" placeholder="Password" required class="form-control">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" placeholder="Password" required class="form-control" tabindex="2">
           </div>
           <div class="mb-3">
-            <button type="submit" class="btn btn-primary mr-2">Register</button>
-            Already have an account? <a href="/auth/login">Login</a>
+            <button type="submit" name="register-button" class="btn btn-primary mr-2" tabindex="3">Register</button>
+            Already have an account? <a href="/auth/login" aria-label="Go to login page">Login</a>
           </div>
         </form>
       </div>
     </main>
   </body>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f2f2;
+    }
+
+    main {
+      padding: 2rem;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    form {
+      max-width: 30rem;
+      margin: 0 auto;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+      border-radius: 0.25rem;
+      border: 1px solid #ccc;
+      padding: 0.5rem;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+      background-color: #0069d9;
+      border-color: #0062cc;
+    }
+
+    a {
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 <%- include('partials/_footer.ejs') %>
 </html>
