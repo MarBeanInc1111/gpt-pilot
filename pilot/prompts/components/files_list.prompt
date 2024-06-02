@@ -1,9 +1,14 @@
-{% if files|length > 0 %}Here are files that are currently implemented:
----START_OF_FILES---{% for file in files %}
-**{{ file.path }}/{{ file.name }}** ({{ file.lines_of_code }} lines of code):
-```
-{{ file.content }}
-```
-{% endfor %}
----END_OF_FILES---
-{% endif -%}
+{% if files %}
+  <h2>Here are the implemented files:</h2>
+  <div class="files">
+    <!--START_OF_FILES-->
+    {% for file in files %}
+      <div class="file">
+        <h3>{{ file.path }}/{{ file.name }}</h3>
+        <p>{{ file.lines_of_code }} lines of code</p>
+        <pre>{{ file.content }}</pre>
+      </div>
+    {% endfor %}
+    <!--END_OF_FILES-->
+  </div>
+{% endif %}
