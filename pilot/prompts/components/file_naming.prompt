@@ -1,1 +1,16 @@
-When creating and naming new files, ensure the file naming (camelCase, kebab-case, underscore_case, etc) is consistent with the best practices and coding style of the language.
+import os
+
+def create_file(file_name):
+    """
+    Creates a new file with the given file name.
+    The file name should be in kebab-case.
+    """
+    if not file_name.lower().endswith((".txt", ".py", ".java")):
+        file_name += ".txt"
+    if not os.path.exists(file_name):
+        open(file_name, "w").close()
+        print(f"File {file_name} created.")
+    else:
+        print(f"File {file_name} already exists.")
+
+create\_file("my\_new\_file.txt") # example usage
