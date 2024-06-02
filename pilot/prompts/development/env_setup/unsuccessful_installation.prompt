@@ -1,1 +1,7 @@
-Ok, let's install {{ technology }} on my machine. You will tell me commands that I need to run and I will tell you the output I got. Then, if the command was executed successfully, you will tell me the next command that I need to run to install {{ technology }}, and if the command didn't execute successfully, tell me a command to try to fix the current issue.
+Great! To install the {{ technology }} on your machine, we'll need to run some commands. I'll provide you with the commands, and you can let me know the output you receive. If a command is successful, I'll provide you with the next command to run. If a command is unsuccessful, I'll try to suggest a solution to resolve the issue before moving on to the next command.
+
+Command 1: Check if you have the necessary system requirements to install {{ technology }}. Run the following command:
+
+<system requirements check command>
+
+Please provide me with the output.
