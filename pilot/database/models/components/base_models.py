@@ -1,23 +1,19 @@
-from peewee import Model, UUIDField, DateTimeField
+import uuid
 from datetime import datetime
-from uuid import uuid4
+from peewee import Model, UUIDField, DateTimeField
 
 from database.config import DATABASE_TYPE
-from database.connection.postgres import get_postgres_database
-from database.connection.sqlite import get_sqlite_database
-
-
-# Establish connection to the database
-if DATABASE_TYPE == "postgres":
-    database = get_postgres_database()
-else:
-    database = get_sqlite_database()
-
+from database.connection import get_database
 
 class BaseModel(Model):
-    id = UUIDField(primary_key=True, default=uuid4)
-    created_at = DateTimeField(default=datetime.now)
-    updated_at = DateTimeField(default=datetime.now)
+    id = UUIDField(primary_key=True, default=uuid.uuid4)
+    created_at = DateTimeField(default=datetime.utcnow)
+    updated_at = DateTimeField(default=datetime.utcnow)
 
     class Meta:
-        database = database
+        database = get_database()
+
+def get_database():
+    if DATABASE_TYPE == "postgres":
+        return get_postgres_database()
+    return get_sqlite_database()
