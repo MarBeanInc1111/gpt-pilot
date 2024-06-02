@@ -1,48 +1,63 @@
-{% if task_steps and step_index is not none -%}
-The current task has been split into multiple steps, and each step is one of the following:
-* `command` - command to run
-* `save_file` -  create or update a file
-* `human_intervention` - if the human needs to do something
+{% comment %}
+Display the task steps, grouped by executed, current, and remaining steps
+{% endcomment %}
 
-{% if step_index > 0 %}Here is the list of steps that have been executed:
-{% for step in task_steps %}{% if loop.index0 < step_index %}
-{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
-    {%- set type_content = step.get(step.type, None) -%}
-    {%- if type_content -%}
-        {%- if 'content' in type_content -%}
-            {%- set _ = type_content.update({'content': '...' }) -%}
-        {%- endif -%}
-        {%- if 'code_change_description' in type_content -%}
-            {%- set _ = type_content.update({'code_change_description': '...' }) -%}
-        {%- endif -%}
-    {%- else -%}
-        {%- if 'code_change_description' in step -%}
-            {%- set _ = step.update({'code_change_description': '...' }) -%}
-        {%- endif -%}
-    {%- endif -%}
-{%- endif -%}
-{{ step }}
-{% endif %}{% endfor %}{% endif %}
-Here is the step you are currently debugging:
-{{ task_steps[step_index] }}
+{% if task_steps and step_index is not None -%}
 
-{% if step_index < task_steps|length - 1 %}Here are steps that will be executed once debugging is done:
-{% for step in task_steps %}{% if loop.index0 > step_index %}
-{%- if step.type in ['save_file', 'code_change', 'modify_file'] -%}
-    {%- set type_content = step.get(step.type, None) -%}
-    {%- if type_content -%}
-        {%- if 'content' in type_content -%}
-            {%- set _ = type_content.update({'content': '...' }) -%}
-        {%- endif -%}
-        {%- if 'code_change_description' in type_content -%}
-            {%- set _ = type_content.update({'code_change_description': '...' }) -%}
-        {%- endif -%}
-    {%- else -%}
-        {%- if 'code_change_description' in step -%}
-            {%- set _ = step.update({'code_change_description': '...' }) -%}
-        {%- endif -%}
-    {%- endif -%}
-{%- endif -%}
-{{ step }}
-{% endif %}{% endfor %}{% endif %}
-{%- endif %}
+{% set executed_steps = task_steps|batch(step_index)[:-2] %}
+{% set current_step = task_steps|batch(step_index)[-2] %}
+{% set remaining_steps = task_steps|batch(step_index)[-1] %}
+
+<h2>Executed steps:</h2>
+<ul>
+{% for step in executed_steps %}
+  <li>{{ step|json_pretty }}<li>
+{% endfor %}
+</ul>
+
+<h2>Current step:</h2>
+<p>{{ current_step|json_pretty }}</p>
+
+<h2>Remaining steps:</h2>
+<ul>
+{% for step in remaining_steps %}
+  <li>{{ step|json_pretty }}<li>
+{% endfor %}
+</ul>
+
+{% else %}
+
+<p>No task steps or invalid step index.</p>
+
+{% endif %}
+
+{% comment %}
+Display the step content, with '...' for long strings
+{% endcomment %}
+
+{% macro display_step_content(step) %}
+  {% if step.type in ['save_file', 'code_change', 'modify_file'] %}
+    {% set type_content = step.get(step.type, None) %}
+    {% if type_content %}
+      {% if 'content' in type_content %}
+        {% set _ = type_content.update({'content': type_content.content|slice(0, 100) + '...' }) %}
+      {% endif %}
+      {% if 'code_change_description' in type_content %}
+        {% set _ = type_content.update({'code_change_description': type_content.code_change_description|slice(0, 100) + '...' }) %}
+      {% endif %}
+    {% else %}
+      {% if 'code_change_description' in step %}
+        {% set _ = step.update({'code_change_description': step.code_change_description|slice(0, 100) + '...' }) %}
+      {% endif %}
+    {% endif %}
+  {% endif %}
+  {{ step }}
+{% endmacro %}
+
+{% for step in executed_steps %}
+  {{ _self.display_step_content(step) }}
+{% endfor %}
+
+{% for step in remaining_steps %}
+  {{ _self.display_step_content(step) }}
+{% endfor %}
