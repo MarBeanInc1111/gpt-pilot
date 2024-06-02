@@ -1,3 +1,20 @@
-Based on the following conversation, write a summary:
+def summarize_conversation(conversation):
+    """
+    Summarizes a given conversation into a single string.
 
-``` {{conversation}} ```
+    Parameters:
+    conversation (List[str]): A list of strings representing the conversation.
+
+    Returns:
+    str: The summarized version of the conversation.
+    """
+    # Remove any greetings and farewells from the conversation
+    conversation = [message for message in conversation if not (message.startswith("Hi") or message.startswith("Hello") or message.endswith("Goodbye") or message.endswith("See you later"))]
+
+    # Join all the messages into a single string with a space separator
+    conversation_string = " ".join(conversation)
+
+    # Use a simple summrization algorithm, like extracting the first sentence and the last sentence
+    summary = conversation_string.split(". ", 2)[0] + ". " + conversation_string.split(". ")[-2:][-1]
+
+    return summary
