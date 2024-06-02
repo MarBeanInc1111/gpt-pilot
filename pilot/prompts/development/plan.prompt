@@ -1,10 +1,26 @@
-You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to work on a new project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the app.
+app_type = input("Enter the type of app: ")
+name = input("Enter the name of the app: ")
+project_details = input("Enter the project details: ")
 
-{{ project_details }}
-{{ features_list }}
-{% if files %}The developers have already used a project scaffolding tool that creates the initial boilerplate for the project:
-{{ existing_summary }}
+feature_list = []
+feature = ""
+while feature != "done":
+    feature = input("Enter a feature (type 'done' to finish): ")
+    if feature != "done":
+        feature_list.append(feature)
 
-{{ files_list }}{% endif %}
+files = input("Have the developers used a project scaffolding tool? (yes/no) ").lower() in ["yes", "y"]
 
-{{ project_tasks }}
+if files:
+    existing_summary = input("Enter the existing summary: ")
+else:
+    existing_summary = ""
+
+project_tasks = input("Enter the project tasks: ")
+
+print(f"App Type: {app_type}")
+print(f"Name: {name}")
+print(f"Project Details:\n{project_details}")
+print(f"Features:\n{' - '.join(feature_list)}\n")
+print(f"Existing Summary (if applicable): {existing_summary}")
+print(f"Project Tasks:\n{project_tasks}")
