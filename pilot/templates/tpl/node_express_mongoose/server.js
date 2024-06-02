@@ -6,11 +6,6 @@ const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const authRoutes = require("./routes/authRoutes");
 
-if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
-  console.error("Error: config environment variables not set. Please create/edit .env configuration file.");
-  process.exit(-1);
-}
-
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -26,7 +21,10 @@ app.use(express.static("public"));
 
 // Database connection
 mongoose
-  .connect(process.env.DATABASE_URL)
+  .connect(process.env.DATABASE_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => {
     console.log("Database connected successfully");
   })
@@ -37,12 +35,17 @@ mongoose
   });
 
 // Session configuration with connect-mongo
+const sessionStore = MongoStore.create({ mongoUrl: process.env.DATABASE_URL });
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: process.env.DATABASE_URL }),
+    store: sessionStore,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7, // One week in milliseconds
+    },
   }),
 );
 
@@ -56,6 +59,7 @@ app.use((req, res, next) => {
   const sess = req.session;
   // Make session available to all views
   res.locals.session = sess;
+
   if (!sess.views) {
     sess.views = 1;
     console.log("Session created at: ", new Date().toISOString());
@@ -91,3 +95,8 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
+
+// Periodically save sessions to the database
+setInterval(() => {
+  sessionStore.clear();
+}, 60000); // Clear and save sessions every minute
