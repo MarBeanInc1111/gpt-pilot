@@ -1,13 +1,13 @@
 {% if previous_features %}
-Here is the list of features that were previously implemented on top of initial high level description of "{{ name }}":
-```
-{% for feature in previous_features %}
-- {{ loop.index }}. {{ feature['summary'] }}
-{% endfor %}
-```
+  <h2>Previous Features</h2>
+  <ol>
+    {% for feature in previous_features %}
+      <li>{{ feature['summary'] }}</li>
+    {% endfor %}
+  </ol>
+{% endif %}
 
-{% endif %}{% if current_feature %}Here is the feature that you are implementing right now:
-```
-{{ current_feature }}
-```
+{% if current_feature %}
+  <h2>Current Feature</h2>
+  <p>{{ current_feature }}</p>
 {% endif %}
