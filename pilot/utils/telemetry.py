@@ -1,54 +1,28 @@
-from logging import getLogger
-from pathlib import Path
 import sys
 import time
-import traceback
 from typing import Any
 from uuid import uuid4
 
 import requests
+from distro import name as get_linux_distro
+from logging import getLogger
+from pathlib import Path
+from functools import wraps
 
-from .settings import settings, version, config_path
-from const.telemetry import LARGE_REQUEST_THRESHOLD, SLOW_REQUEST_THRESHOLD
+LARGE_REQUEST_THRESHOLD = 1000
+SLOW_REQUEST_THRESHOLD = 0.5
 
 log = getLogger(__name__)
 
 
 class Telemetry:
-    """
-    Anonymous telemetry.
-
-    See ../../docs/TELEMETRY.md for more information on what is collected
-    and how to disable it on a configuration level.
-
-    This class is a singleton, use the `telemetry` global variable to access it:
-
-    >>> from utils.telemetry import telemetry
-
-    To set up telemetry (only once, at GPT-Pilot setup), use the
-    `telemetry.setup()` method:
-
-    >>> telemetry.setup()
-
-    To record start of application creation process:
-
-    >>> telemetry.start()
-
-    To record data or increase counters:
-
-    >>> telemetry.set("model", "gpt-4")
-    >>> telemetry.inc("num_llm_requests", 5)
-
-    To stop recording and send the data:
-
-    >>> telemetry.stop()
-    >>> telemetry.send()
-
-    Note: all methods are no-ops if telemetry is not enabled.
-    """
-
     DEFAULT_ENDPOINT = "https://api.pythagora.io/telemetry"
     MAX_CRASH_FRAMES = 3
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(Telemetry, cls).__new__(cls)
+        return cls.instance
 
     def __init__(self):
         self.enabled = False
@@ -95,8 +69,7 @@ class Telemetry:
         }
         if sys.platform == "linux":
             try:
-                import distro
-                self.data["linux_distro"] = distro.name(pretty=True)
+                self.data["linux_distro"] = get_linux_distro()
             except Exception as err:
                 log.debug(f"Error getting Linux distribution info: {err}", exc_info=True)
         self.clear_counters()
@@ -175,6 +148,15 @@ class Telemetry:
             "enabled": self.enabled,
         }
 
+    def raise_if_not_enabled(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if not self.enabled:
+                return
+            return func(self, *args, **kwargs)
+        return wrapper
+
+    @raise_if_not_enabled
     def set(self, name: str, value: Any):
         """
         Set a telemetry data field to a value.
@@ -192,6 +174,7 @@ class Telemetry:
 
         self.data[name] = value
 
+    @raise_if_not_enabled
     def inc(self, name: str, value: int = 1):
         """
         Increase a telemetry data field by a value.
@@ -209,6 +192,7 @@ class Telemetry:
 
         self.data[name] += value
 
+    @raise_if_not_enabled
     def start(self):
         """
         Record start of application creation process.
@@ -216,6 +200,7 @@ class Telemetry:
         self.start_time = time.time()
         self.end_time = None
 
+    @raise_if_not_enabled
     def stop(self):
         """
         Record end of application creation process.
@@ -227,6 +212,7 @@ class Telemetry:
         self.end_time = time.time()
         self.data["elapsed_time"] = int(self.end_time - self.start_time)
 
+    @raise_if_not_enabled
     def record_crash(
         self,
         exception: Exception,
@@ -242,9 +228,6 @@ class Telemetry:
         * exception (class name and message)
         * file:line for the last (innermost) 3 frames of the stack trace
         """
-        if not self.enabled:
-            return
-
         self.set("end_result", end_result)
 
         root_dir = Path(__file__).parent.parent.parent
@@ -277,6 +260,7 @@ class Telemetry:
             "frames": frames[:self.MAX_CRASH_FRAMES],
         }
 
+    @raise_if_not_enabled
     def record_llm_request(
         self,
         tokens: int,
@@ -327,6 +311,22 @@ class Telemetry:
             "median_time": sorted(self.slow_requests)[n_slow // 2] if n_slow > 0 else None,
         }
 
+    @raise_if_not_enabled
+    def record_event(self, name: str, data: dict = None):
+        """
+        Record an event with optional data.
+
+        :param name: name of the event
+        :param data: optional event data
+        """
+        if data is None:
+            data = {}
+
+        event_data = self.data.get("events", [])
+        event_data.append({"name": name, "data": data})
+        self.data["events"] = event_data
+
+    @raise_if_not_enabled
     def send(self, event:str = "pilot-telemetry"):
         """
         Send telemetry data to the phone-home endpoint.
@@ -361,19 +361,6 @@ class Telemetry:
             log.error(
                 f"Telemetry.send(): failed to send telemetry data: {e}", exc_info=True
             )
-
-    def output_project_stats(self):
-        """
-        Output project statistics to the extension.
-
-        This does not send the stats to any server.
-        """
-
-        print({
-            "num_lines": self.data["num_lines"],
-            "num_files": self.data["num_files"],
-            "num_tokens": self.data["num_llm_tokens"],
-        }, type='projectStats')
 
 
 telemetry = Telemetry()
