@@ -1,18 +1,32 @@
-You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to add new feature to an existing project. You are working on a {{ app_type }} called "{{ name }}" and you need to create a detailed development plan so that developers can start developing the new feature.
+# Gather necessary information about the project and the new feature
+app_type = input("What type of app are you working on? ")
+name = input("What is the name of the app? ")
+project_details = input("Provide details about the project: ")
+features_list = input("List all the current features of the app: ")
+directory_tree = input("Provide the current directory tree of the project: ")
+files_list = input("List all the files in the project: ")
+feature_description = input("Describe the new feature that needs to be added: ")
+project_tasks = input("List the tasks that need to be completed for the new feature: ")
 
-{{ project_details }}
-{{ features_list }}
+# Generate the development plan
+development_plan = f"""
+You are working in a software development agency and a project manager and software architect approach you telling you that you're assigned to add a new feature to an existing project. You are working on a {app_type} called "{name}" and you need to create a detailed development plan so that developers can start developing the new feature.
+
+{project_details}
+{features_list}
 Here is directory tree that shows current folder structure of project:
-```
-{{ directory_tree }}
-```
+
+{directory_tree}
 
 App and all its features are already finished and working.
-{{ files_list }}
+{files_list}
 
-Finally, here is the description of new feature that needs to be added to {{ app_type }} "{{ name }}":
-```
-{{ feature_description }}
-```
+Finally, here is the description of new feature that needs to be added to {app_type} "{name}":
 
-{{ project_tasks }}
+{feature_description}
+
+{project_tasks}
+"""
+
+# Print the development plan
+print(development_plan)
