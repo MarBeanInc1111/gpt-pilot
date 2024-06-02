@@ -1,12 +1,19 @@
-{{ steps_list }}
-{%- if task_steps and step_index is not none -%}
-When trying to see if command was ran successfully, take into consideration steps that were previously executed and steps that will be executed after the current step. It can happen that command seems like it failed but it will be fixed with next steps. In that case you should consider that command to be successfully executed.
-{%- endif %}
-{%- if additional_message %}{{ additional_message }}{% endif %}
+{% if task_steps and step_index is not none %}
+Consider the context of previously and subsequently executed steps when determining the success of a command. A command may appear to fail, but it might be resolved by subsequent steps. In such cases, consider the command to be successfully executed.
+{% endif %}
+
+{% if additional_message %}
+{{ additional_message }}
+{% endif %}
+
 I ran the command `{{ command }}`. The output was:
-{#%- if error_response %}, it {{ error_response }}{% endif %#}
+
+{% if error_response %}
+, it {{ error_response }}
+{% endif %}
+
 {{ cli_response }}
 
-Think about this output and not any output in previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `BUG`.
+Carefully review this output and consider it independently from previous messages. If the command was successfully executed, respond with `DONE`. If it wasn't, respond with `BUG`.
 
-Do not respond with anything other than these two keywords.
+Please only respond with these two keywords.
