@@ -1,18 +1,16 @@
 import requests
+from typing import Dict, Optional
 
-from helpers.cli import terminate_running_processes
+import helpers.cli
 from prompts.prompts import ask_user
-
 from utils.telemetry import telemetry
 
-
-def send_feedback(feedback, path_id):
+def send_feedback(feedback: str, path_id: str) -> None:
     """Send the collected feedback to the endpoint."""
-    # Prepare the feedback data (you can adjust the structure as per your backend needs)
     feedback_data = {
         "pathId": path_id,
         "data": feedback,
-        "event": "pilot-feedback"
+        "event": "pilot-feedback",
     }
 
     try:
@@ -22,7 +20,7 @@ def send_feedback(feedback, path_id):
         print(f"Failed to send feedback data: {err}")
 
 
-def trace_code_event(name: str, data: dict):
+def trace_code_event(name: str, data: Dict) -> None:
     """
     Record a code event to trace potential logic bugs.
 
@@ -31,7 +29,6 @@ def trace_code_event(name: str, data: dict):
     """
     path_id = get_path_id()
 
-    # Prepare the telemetry data
     telemetry_data = {
         "pathId": path_id,
         "event": f"trace-{name}",
@@ -41,24 +38,24 @@ def trace_code_event(name: str, data: dict):
     try:
         response = requests.post("https://api.pythagora.io/telemetry", json=telemetry_data)
         response.raise_for_status()
-    except:  # noqa
-        pass
+    except requests.HTTPError as err:
+        print(f"Failed to trace code event: {err}")
 
 
-def get_path_id():
+def get_path_id() -> str:
     return telemetry.telemetry_id
 
-def ask_to_store_prompt(project, path_id):
+def ask_to_store_prompt(project, path_id: str) -> None:
     init_prompt = project.main_prompt if project is not None and project.main_prompt else None
     if init_prompt is None:
         return
 
-    # Prepare the prompt data
     telemetry_data = {
         "pathId": path_id,
         "event": "pilot-prompt",
-        "data": init_prompt
+        "data": init_prompt,
     }
+
     question = ('We would appreciate if you let us store your initial app prompt. If you are OK with that, please just '
                 'press ENTER')
 
@@ -74,7 +71,7 @@ def ask_to_store_prompt(project, path_id):
         pass
 
 
-def ask_user_feedback(project, path_id, ask_feedback):
+def ask_user_feedback(project, path_id: str, ask_feedback: bool) -> None:
     question = ('Were you able to create any app that works? Please write any feedback you have or just press ENTER to exit:')
     feedback = None
     if ask_feedback:
@@ -84,7 +81,7 @@ def ask_user_feedback(project, path_id, ask_feedback):
         send_feedback(feedback, path_id)
 
 
-def ask_user_email(project):
+def ask_user_email(project) -> Optional[bool]:
     question = (
         "How did GPT Pilot do? We'd love to talk with you and hear your thoughts. "
         "If you'd like to be contacted by us, please provide your email address, or just press ENTER to exit:"
@@ -98,13 +95,15 @@ def ask_user_email(project):
         pass
     return False
 
-def exit_gpt_pilot(project, ask_feedback=True):
-    terminate_running_processes()
+def exit_gpt_pilot(project, ask_feedback: bool = True) -> None:
+    helpers.cli.terminate_running_processes()
     path_id = get_path_id()
 
     if ask_feedback:
         ask_to_store_prompt(project, path_id)
-        ask_user_email(project)
+        result = ask_user_email(project)
+    else:
+        result = False
 
     # TODO: Turned off for now because we're asking for email, and we don't want to
     # annoy people.
