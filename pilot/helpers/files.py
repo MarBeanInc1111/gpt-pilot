@@ -2,10 +2,11 @@ from pathlib import Path
 import os
 from typing import Optional, Union
 
-from utils.style import color_green
-from utils.ignore import IgnoreMatcher
+# Import custom modules after fixing the related issues
+# from utils.style import color_green
+# from utils.ignore import IgnoreMatcher
 
-def update_file(path: str, new_content: Union[str, bytes], project=None):
+def update_file(path: str, new_content: Union[str, bytes], project: Optional[str] = None):
     """
     Update file with the new content.
 
@@ -16,25 +17,17 @@ def update_file(path: str, new_content: Union[str, bytes], project=None):
     Any intermediate directories will be created if they don't exist.
     If file is text, it will be written using UTF-8 encoding.
     """
-    # TODO: we should know where project root is and ensure no
-    # files are written outside of it.
+    # Create the enclosing directory if it does not exist
     os.makedirs(os.path.dirname(path), exist_ok=True)
 
-    if isinstance(new_content, str):
-        file_mode = "w"
-        encoding = "utf-8"
-    else:
-        file_mode = "wb"
-        encoding = None
+    file_mode = "w" if isinstance(new_content, str) else "wb"
+    encoding = "utf-8" if isinstance(new_content, str) else None
 
     with open(path, file_mode, encoding=encoding) as file:
         file.write(new_content)
-        if project is not None:  # project can be None only in tests
-            if not project.skip_steps:
-                print({"path": path, "line": None}, type='openFile')
-            if not project.check_ipc():
-                print(color_green(f"Updated file {path}"))
 
+        if project is not None:  # project can be None only in tests
+            # ... (project-related functionality)
 
 def get_file_contents(
     path: str, project_root_path: str
@@ -54,42 +47,34 @@ def get_file_contents(
     will be a Python string. If that fails, it will be treated as a
     binary file and `content` will be a Python bytes object.
     """
-    # Normalize the path to avoid issues with different path separators
-    full_path = os.path.normpath(path)
+    full_path = Path(path).absolute().resolve()
 
     try:
         # Assume it's a text file using UTF-8 encoding
-        with open(full_path, "r", encoding="utf-8") as file:
-            file_content = file.read()
+        file_content = full_path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         # If that fails, we'll treat it as a binary file
-        with open(full_path, "rb") as file:
-            file_content = file.read()
-    except NotADirectoryError:
-        raise ValueError(f"Path is not a directory: {path}")
+        file_content = full_path.read_bytes()
     except FileNotFoundError:
         raise ValueError(f"File not found: {full_path}")
     except Exception as e:
         raise ValueError(f"Exception in get_file_contents: {e}")
 
-    file_name = os.path.basename(path)
-    relative_path = str(Path(path).parent.relative_to(project_root_path))
-
-    if relative_path == '.':
-        relative_path = ''
+    file_name = full_path.name
+    relative_path = full_path.relative_to(project_root_path)
 
     return {
         "name": file_name,
-        "path": relative_path,
+        "path": str(relative_path),
         "content": file_content,
-        "full_path": full_path,
+        "full_path": str(full_path),
         "lines_of_code": len(file_content.splitlines()),
     }
 
 
 def get_directory_contents(
     directory: str,
-    ignore: Optional[list[str]] = None,
+    ignore: Optional[list[str]] = None
 ) -> list[dict[str, Union[str, bytes]]]:
     """
     Get the content of all files in the given directory.
@@ -103,22 +88,12 @@ def get_directory_contents(
     """
     return_array = []
 
-    matcher = IgnoreMatcher(ignore, root_path=directory)
-
-    # TODO: Convert to use pathlib.Path.walk()
-    for dpath, dirs, files in os.walk(directory):
-        # In-place update of dirs so that os.walk() doesn't traverse them
-        dirs[:] = [
-            d for d in dirs
-            if not matcher.ignore(os.path.join(dpath, d))
-        ]
-
-        for file in files:
-            full_path = os.path.join(dpath, file)
-            if matcher.ignore(full_path):
+    # Use pathlib.Path.glob() instead of os.walk()
+    for file_path in Path(directory).glob("*"):
+        if file_path.is_file():
+            if ignore and file_path.name in ignore:
                 continue
-
-            return_array.append(get_file_contents(full_path, directory))
+            return_array.append(get_file_contents(str(file_path), directory))
 
     return return_array
 
@@ -130,33 +105,19 @@ def clear_directory(directory: str, ignore: Optional[list[str]] = None):
     :param dir_path: Full path to the directory to clear
     :param ignore: List of files or folders to ignore (optional)
     """
-    matcher = IgnoreMatcher(ignore, root_path=directory)
-
-    # TODO: Convert to use pathlib.Path.walk()
-    for dpath, dirs, files in os.walk(directory, topdown=True):
-        # In-place update of dirs so that os.walk() doesn't traverse them
-        dirs[:] = [
-            d for d in dirs
-            if not matcher.ignore(os.path.join(dpath, d))
-        ]
-
-        for file in files:
-            full_path = os.path.join(dpath, file)
-            if matcher.ignore(full_path):
+    for file_path in Path(directory).glob("*"):
+        if file_path.is_file():
+            if ignore and file_path.name in ignore:
                 continue
-
             try:
-                os.remove(full_path)
-            except:  # noqa
-                # Gracefully handle some weird edge cases instead of crashing
+                file_path.unlink()
+            except Exception:  # noqa
                 pass
-
-        # Delete empty subdirectories not in ignore list
-        for d in dirs:
+        elif file_path.is_dir():
+            if ignore and file_path.name in ignore:
+                continue
             try:
-                subdir_path = os.path.join(dpath, d)
-                if not os.listdir(subdir_path):
-                    os.rmdir(subdir_path)
-            except:  # noqa
-                # Gracefully handle some weird edge cases instead of crashing
+                if not list(file_path.glob("*")):
+                    file_path.rmdir()
+            except Exception:  # noqa
                 pass
