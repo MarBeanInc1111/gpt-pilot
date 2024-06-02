@@ -1,1 +1,23 @@
-All the steps will be executed in order in which you give them, so it is very important that you think about all steps before you start listing them. For example, you should never code something before you install dependencies or you should never try access a file before it exists in project.
+# Think through all steps before starting the process
+# to ensure proper order and avoid errors
+
+# Step 1: Install dependencies
+# (assuming package manager is already installed)
+pip install required_package_1 required_package_2
+
+# Step 2: Create necessary files and directories
+# (replace 'file.txt' and 'directory/' with actual names)
+if not os.path.exists('file.txt'):
+    open('file.txt', 'a').close()
+
+if not os.path.exists('directory/'):
+    os.makedirs('directory/')
+
+# Step 3: Write code
+# (replace 'code.py' with actual name)
+with open('code.py', 'w') as file:
+    file.write('your code here')
+
+# Step 4: Execute code
+# (replace 'code.py' with actual name)
+python code.py
