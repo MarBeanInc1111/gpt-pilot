@@ -1,65 +1,160 @@
-    # init CLI
-    # 1. show the type of the app that needs to be created
-    # 1.c ask user to press enter if it's ok, or to add the type of the app they want
-        # if it's not ok, check if the wanted app CAN be created
-            # if it can, print confirmation message and continue
-            # if it can't, print error message and exit
-    # 2. ask user for the main definition of the app
-    # start the processing queue
+# Init CLI
+def init_cli():
+    # 1. Show the type of the app that needs to be created
+    print("1. Choose the type of the app that needs to be created:")
+    app_type = input("Enter the app type or press enter for the default type: ").strip()
+    if not app_type:
+        app_type = "default"
 
+    # 1.c Check if the wanted app can be created
+    if app_type not in ["web", "mobile", "default"]:
+        print(f"Error: The app type '{app_type}' cannot be created.")
+        exit()
+    print(f"Confirmation: The app type '{app_type}' will be created.")
 
-# 2. show the user flow of the app
-# 2.c ask user to press enter if it's ok, or to add the user flow they want
-    # ask for input until they just press enter
-    # recompute the user flow and ask again
-# 3. show the COMPONENTS of the app
-    # 3.1 frontend
-    # 3.2 backend
-    # 3.3 database
-    # 3.4 config
-    # 3.x ask user to press enter if it's ok, or to add the components they want
-        # ask for input until they just press enter
-        # recompute the components and ask again
-# 4. break down the FILES that need to be created to support each of the components
-    # ask user to press enter if it's ok, or to add the files they want
-        # ask for input until they just press enter
-        # recompute the files and ask again
-# 5. loop through components (IMPORTANT!!!)
-    # 5.1 loop through use cases
-        # 5.1.1 for each case in each component, break down the files, functions and dependencies that need to be created
-            # each function will have a description
-            # in each loop, we will send all the previous files and functions so that LLM can change them if needed
-# 6. break down the tests that need to be created
-    # in the prompt, send all the files and functions
-    # start from the high level tests and go down to the unit tests
-    # 6.1 ask user to press enter if it's ok, or to add the tests they want
-        # ask for input until they just press enter
-        # recompute the tests and ask again
-# 7. write the tests
-# 8. write the files for each test
-# 9. run each created test once the code is written
-    # start from low level tests and do the high level tests last
-    # track which test is related to which code
-    # GPT should first say which functions will it use for a test and then we check if any of those functions is already written and if so, we send it to LLM to change it
-    # track code coverage and increase to get to 100%
-    # if the code requires something from config, ask the user to add it
-    # if the code requires
-    # when files overlap, ask LLM to combine them
-# 10. try debugging 5 times
-    # 10.1 if it doesn't work, ask the user to debug (!!!IMPORTANT!!!)
-        # show them the explanations
-        # ask for input if they want to enter something and retry 5 debugging attempts
-# 11. create build/run script
-# 12. RUN THE APP
+    # 2. Ask user for the main definition of the app
+    app_definition = input("2. Enter the main definition of the app: ").strip()
 
+    # Start the processing queue
+    # ...
 
-# 4. show the components of the app setup
-    # a. installation process
-    # b. configuration process
-    # c. running process
-    # d. building process
-    # e. testing process
+# Show the user flow of the app
+def show_user_flow(app_type):
+    # 2.c Ask user to press enter if it's ok, or to add the user flow they want
+    print(f"3. Enter the user flow for the {app_type} app:")
+    user_flow = input("Enter the user flow or press enter for the default flow: ").strip()
+    if not user_flow:
+        user_flow = "default"
 
+    # Ask for input until they just press enter
+    # Recompute the user flow and ask again
+    # ...
 
-# comments
-# 1. Možemo koristiti dodatni model koji će izvlačiti iz GPT responsea što treba pokrenuti, što treba updateati, koji komentar složiti, etc. - da ne trebamo i to učiti originalni model in context
+# Show the components of the app
+def show_components(app_type):
+    # 3.1 Frontend
+    print(f"4. Enter the frontend components for the {app_type} app:")
+    frontend_components = input("Enter the frontend components or press enter for the default components: ").strip()
+    if not frontend_components:
+        frontend_components = "default"
+
+    # 3.2 Backend
+    print(f"5. Enter the backend components for the {app_type} app:")
+    backend_components = input("Enter the backend components or press enter for the default components: ").strip()
+    if not backend_components:
+        backend_components = "default"
+
+    # 3.3 Database
+    print(f"6. Enter the database components for the {app_type} app:")
+    database_components = input("Enter the database components or press enter for the default components: ").strip()
+    if not database_components:
+        database_components = "default"
+
+    # 3.4 Config
+    print(f"7. Enter the config components for the {app_type} app:")
+    config_components = input("Enter the config components or press enter for the default components: ").strip()
+    if not config_components:
+        config_components = "default"
+
+    # 3.x Ask user to press enter if it's ok, or to add the components they want
+    # Ask for input until they just press enter
+    # Recompute the components and ask again
+    # ...
+
+# Break down the files that need to be created to support each of the components
+def break_down_files(app_type, components):
+    # Ask user to press enter if it's ok, or to add the files they want
+    # Ask for input until they just press enter
+    # Recompute the files and ask again
+    # ...
+
+# Break down the tests that need to be created
+def break_down_tests(app_type, files, functions):
+    # In the prompt, send all the files and functions
+    # Start from the high level tests and go down to the unit tests
+    # 6.1 Ask user to press enter if it's ok, or to add the tests they want
+    # Ask for input until they just press enter
+    # Recompute the tests and ask again
+    # ...
+
+# Write the tests
+def write_tests(app_type, tests):
+    # ...
+
+# Write the files for each test
+def write_test_files(app_type, test_files):
+    # ...
+
+# Run each created test once the code is written
+def run_tests(app_type, tests, test_files):
+    # ...
+
+# Try debugging 5 times
+def try_debugging(app_type, files, functions, tests, test_files):
+    # ...
+
+# Create build/run script
+def create_build_run_script(app_type, files, functions, tests, test_files):
+    # ...
+
+# Run the app
+def run_app(app_type, files, functions):
+    # ...
+
+# 4. Show the components of the app setup
+def show_app_setup(app_type):
+    # a. Installation process
+    print(f"{app_type} app installation process:")
+    # ...
+
+    # b. Configuration process
+    print(f"{app_type} app configuration process:")
+    # ...
+
+    # c. Running process
+    print(f"{app_type} app running process:")
+    # ...
+
+    # d. Building process
+    print(f"{app_type} app building process:")
+    # ...
+
+    # e. Testing process
+    print(f"{app_type} app testing process:")
+    # ...
+
+# Init CLI
+init_cli()
+
+# Show the user flow of the app
+show_user_flow("web")
+
+# Show the components of the app
+components = show_components("web")
+
+# Break down the files that need to be created to support each of the components
+files = break_down_files("web", components)
+
+# Break down the tests that need to be created
+tests = break_down_tests("web", files, functions)
+
+# Write the tests
+write_tests("web", tests)
+
+# Write the files for each test
+write_test_files("web", test_files)
+
+# Run each created test once the code is written
+run_tests("web", tests, test_files)
+
+# Try debugging 5 times
+try_debugging("web", files, functions, tests, test_files)
+
+# Create build/run script
+create_build_run_script("web", files, functions, tests, test_files)
+
+# Run the app
+run_app("web", files, functions)
+
+# Show the components of the app setup
+show_app_setup("web")
