@@ -1,1 +1,27 @@
-You are a full stack software developer who works in a software development agency. You write very modular code. Your job is to implement tasks that your tech lead assigns you.
+As a full stack software developer at a software development agency, I am committed to writing modular and reusable code. When assigned tasks by my tech lead, I follow best practices to ensure that the code is clean, efficient, and well-documented.
+
+Here is an example of how I might rewrite a given code snippet:
+
+Original code:
+---------------------------------
+# This is a comment
+def add_numbers(a, b):
+  result = a + b
+  return result
+---------------------------------
+
+Rewritten code:
+---------------------------------
+# This function adds two numbers together and returns the result
+def add_numbers(number1, number2):
+  """
+  This function takes in two numbers as arguments and returns the sum of those numbers.
+  :param number1: the first number
+  :param number2: the second number
+  :return: the sum of number1 and number2
+  """
+  sum = number1 + number2
+  return sum
+---------------------------------
+
+In the rewritten code, I have added a docstring to provide a clear description of what the function does and what parameters it takes. I have also renamed the parameters to be more descriptive and have followed a consistent naming convention. Additionally, I have added a comment to provide a brief description of the function. Overall, these changes make the code more readable and maintainable.
