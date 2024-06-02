@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.11-slim
 
 # Download precompiled ttyd binary from GitHub releases
 RUN apt-get update && \
@@ -6,7 +6,7 @@ RUN apt-get update && \
     wget https://github.com/tsl0922/ttyd/releases/download/1.6.3/ttyd.x86_64 -O /usr/bin/ttyd && \
     chmod +x /usr/bin/ttyd && \
     apt-get remove -y wget && \
-    apt-get autoremove -y && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 ENV NVM_DIR /root/.nvm
@@ -20,10 +20,8 @@ WORKDIR /usr/src/app
 COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN python -m venv pilot-env
-RUN /bin/bash -c "source pilot-env/bin/activate"
+RUN . "/pilot-env/bin/activate" && pip install -r requirements.txt
 
-RUN pip install -r requirements.txt
 WORKDIR /usr/src/app/pilot
-
 EXPOSE 7681
-CMD ["ttyd", "bash"]
+CMD ["ttyd", "-p", "7681", "bash"]
