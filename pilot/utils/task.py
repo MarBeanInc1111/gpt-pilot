@@ -1,10 +1,9 @@
 import json
-from uuid import uuid4
+import uuid
 
+from const.telemetry import LOOP_THRESHOLD
 from utils.telemetry import telemetry
 from utils.exit import trace_code_event
-from const.telemetry import LOOP_THRESHOLD
-
 
 class Task:
     """
@@ -56,7 +55,7 @@ class Task:
         self.data = self.initial_data.copy()
         self.ping_extension = True
 
-    def set(self, key: str, value: any):
+    def set(self, key: str, value: any) -> None:
         """
         Set a value in the task data
 
@@ -65,7 +64,7 @@ class Task:
         """
         self.data[key] = value
 
-    def inc(self, key: str, value: int = 1):
+    def inc(self, key: str, value: int = 1) -> None:
         """
         Increment a value in the task data
 
@@ -76,7 +75,7 @@ class Task:
         if key == 'iterations' and self.data[key] == LOOP_THRESHOLD + 1:
             self.send()
 
-    def start_new_task(self, task_description: str, i: int):
+    def start_new_task(self, task_description: str, i: int) -> None:
         """
         Start a new task
 
@@ -87,12 +86,14 @@ class Task:
         self.clear()
         self.set('task_description', task_description)
         self.set('task_number', i)
-        self.set('loopId', f"{uuid4()}")
+        self.set('loopId', f"{uuid.uuid4()}")
+        if self.data['iterations'] > LOOP_THRESHOLD:
+            self.send()
 
-    def add_debugging_task(self, recursion_layer: int = None,
-                           command: dict = None,
-                           user_input: str = None,
-                           issue_description: str = None):
+    def add_debugging_task(self, recursion_layer: int | None = None,
+                           command: dict | None = None,
+                           user_input: str | None = None,
+                           issue_description: str | None = None) -> None:
         """
         Add a debugging task to the task data structure
 
@@ -101,14 +102,17 @@ class Task:
         :param user_input: user input
         :param issue_description: description of the issue
         """
-        self.data['debugging'].append({
-            'recursion_layer': recursion_layer,
-            'command': command,
-            'user_inputs': [user_input] if user_input is not None else [],
-            'issue_description': issue_description,
-        })
+        if self.data.get('debugging') and len(self.data['debugging']) > 0:
+            self.data['debugging'][-1]['user_inputs'].append(user_input)
+        else:
+            self.data['debugging'].append({
+                'recursion_layer': recursion_layer,
+                'command': command,
+                'user_inputs': [user_input] if user_input is not None else [],
+                'issue_description': issue_description,
+            })
 
-    def add_user_input_to_debugging_task(self, user_input: str):
+    def add_user_input_to_debugging_task(self, user_input: str) -> None:
         """
         Add user input to the last debugging task
 
@@ -117,13 +121,13 @@ class Task:
         if self.data.get('debugging') and len(self.data['debugging']) > 0:
             self.data['debugging'][-1]['user_inputs'].append(user_input)
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clear all the task data
         """
         self.data = self.initial_data.copy()
 
-    def send(self, name: str = 'loop-start', force: bool = False):
+    def send(self, name: str = 'loop-start', force: bool = False) -> None:
         """
         Send the task data to telemetry
 
@@ -139,11 +143,12 @@ class Task:
                     'pathId': telemetry.telemetry_id,
                     'data': full_data,
                 }), type='loopTrigger')
-                # TODO: see if we want to ping the extension multiple times
                 self.ping_extension = False
 
-    def exit(self):
+    def exit(self, force: bool = False) -> None:
         """
         Send the task data to telemetry and exit the process
+
+        :param force: force send the task data to telemetry
         """
-        self.send(name='loop-end')
+        self.send(name='loop-end', force=force)
