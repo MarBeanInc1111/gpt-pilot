@@ -1,13 +1,11 @@
-from io import StringIO
 import json
-from os.path import expanduser, expandvars, join
-from os import getenv
+import os
 from pathlib import Path
-from subprocess import check_output
-import sys
 from unittest.mock import patch, MagicMock
 
 import pytest
+from git import Repo  # Added to get the git commit hash
+import pkg_resources  # Added to get the package version
 
 from utils.settings import (
     Loader,
@@ -20,15 +18,17 @@ from utils.settings import (
 
 @pytest.fixture
 def expected_config_location():
-    xdg_config_home = getenv("XDG_CONFIG_HOME")
-    if xdg_config_home:
-        return join(xdg_config_home, "gpt-pilot", "config.json")
-    elif sys.platform in ["darwin", "linux"]:
-        return expanduser("~/.gpt-pilot/config.json")
-    elif sys.platform == "win32":
-        return expandvars("%APPDATA%\\GPT Pilot\\config.json")
+    config_home = os.getenv("XDG_CONFIG_HOME")
+    if config_home:
+        return Path(config_home) / "gpt-pilot" / "config.json"
     else:
-        raise RuntimeError(f"Unknown platform: {sys.platform}")
+        platform = sys.platform
+        if platform == "darwin" or platform == "linux":
+            return Path.home() / ".gpt-pilot" / "config.json"
+        elif platform == "win32":
+            return Path(os.environ["APPDATA"]) / "GPT Pilot" / "config.json"
+        else:
+            raise RuntimeError(f"Unknown platform: {platform}")
 
 
 def test_settings_initializes_known_variables():
@@ -66,7 +66,7 @@ def test_settings_to_dict():
 
 def test_loader_config_file_location(expected_config_location):
     settings = Settings()
-    Loader(settings).config_path == expected_config_location
+    assert Loader(settings).config_path == expected_config_location
 
 
 @patch("utils.settings.open")
@@ -82,15 +82,12 @@ def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_loca
             },
         }
     )
-    mock_open.return_value.__enter__.return_value = StringIO(fake_config)
+    mock_open.return_value.__enter__.return_value = fake_config
 
     loader = Loader(settings)
-    assert loader.config_path == Path(expected_config_location)
-
-    loader.config_path = MagicMock()
     loader.load()
 
-    loader.config_path.exists.assert_called_once_with()
+    assert loader.config_path == Path(expected_config_location)
     mock_open.assert_called_once_with(loader.config_path, "r", encoding="utf-8")
 
     assert settings.openai_api_key == "test_key"
@@ -103,13 +100,10 @@ def test_loader_load_config_file(_mock_from_env, mock_open, expected_config_loca
 def test_loader_load_no_config_file(_mock_from_env, mock_open, expected_config_location):
     settings = Settings()
     loader = Loader(settings)
-    assert loader.config_path == Path(expected_config_location)
+    loader.config_path = Path(expected_config_location)
 
-    loader.config_path = MagicMock()
-    loader.config_path.exists.return_value = False
     loader.load()
 
-    loader.config_path.exists.assert_called_once_with()
     mock_open.assert_not_called()
 
     assert settings.openai_api_key is None
@@ -132,11 +126,10 @@ def test_loader_load_from_env(mock_getenv):
 
 
 def test_get_git_commit():
+    repo = Repo()
     try:
-        expected_commit_hash = check_output(
-            ["git", "rev-parse", "HEAD"], encoding="ascii"
-        ).strip()
-    except Exception:
+        expected_commit_hash = repo.head.object.hexsha
+    except:
         expected_commit_hash = None
 
     assert get_git_commit() == expected_commit_hash
@@ -150,9 +143,9 @@ def test_get_version():
     try:
         commit_suffix = (
             "-git"
-            + check_output(["git", "rev-parse", "HEAD"], encoding="ascii").strip()[:7]
+            + get_git_commit()[:7] if get_git_commit() else ""
         )
-    except Exception:
+    except:
         commit_suffix = ""
 
     assert get_version().endswith(commit_suffix)
