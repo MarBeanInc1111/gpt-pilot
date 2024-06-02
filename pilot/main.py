@@ -1,31 +1,25 @@
-# main.py
+import os
+import sys
+from typing import Any, Dict, List, Union
+
 import builtins
 import json
-import os
-
-import sys
 import traceback
+from dotenv import load_dotenv
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    raise RuntimeError('Python environment for GPT Pilot is not completely set up: required package "python-dotenv" is missing.') from None
+# Added type hinting for function arguments and return types
+def get_env_variable(variable_name: str, raise_error: bool = True) -> Union[str, None]:
+    if variable_name in os.environ:
+        return os.environ[variable_name]
+    elif raise_error:
+        raise RuntimeError(f'Missing environment variable: {variable_name}')
+    else:
+        return None
 
-load_dotenv()
-
-from utils.style import color_red
-from utils.custom_print import get_custom_print
-from helpers.Project import Project
-from utils.arguments import get_arguments
-from utils.exit import exit_gpt_pilot
-from logger.logger import logger
-from database.database import database_exists, create_database, tables_exist, create_tables, get_created_apps_with_steps
-
-from utils.settings import settings, loader, get_version
-from utils.telemetry import telemetry
-from helpers.exceptions import ApiError, TokenLimitError, GracefulExit
 
 def init():
+    load_dotenv()
+
     # Check if the "euclid" database exists, if not, create it
     if not database_exists():
         create_database()
@@ -40,6 +34,25 @@ def init():
 
     return arguments
 
+# Added type hinting for function arguments and return types
+def handle_telemetry(project: Any, telemetry_data: Dict[str, Any], end_result: str):
+    if settings.telemetry is None:
+        telemetry.setup()
+        loader.save("telemetry")
+
+    if 'app_id' in arguments:
+        telemetry.set("is_continuation", True)
+
+    if "email" in arguments:
+        telemetry.set("user_contact", arguments["email"])
+
+    if "extension_version" in arguments:
+        telemetry.set("extension_version", arguments["extension_version"])
+
+    if project is not None and project.check_ipc():
+        telemetry.send()
+
+    telemetry.record_crash(telemetry_data, end_result=end_result)
 
 if __name__ == "__main__":
     ask_feedback = True
@@ -53,10 +66,13 @@ if __name__ == "__main__":
 
         builtins.print, ipc_client_instance = get_custom_print(args)
 
+        OPENAI_API_KEY = get_env_variable("OPENAI_API_KEY", raise_error=False)
         if '--api-key' in args:
-            os.environ["OPENAI_API_KEY"] = args['--api-key']
+            OPENAI_API_KEY = args['--api-key']
+
+        OPENAI_ENDPOINT = get_env_variable("OPENAI_ENDPOINT", raise_error=False)
         if '--api-endpoint' in args:
-            os.environ["OPENAI_ENDPOINT"] = args['--api-endpoint']
+            OPENAI_ENDPOINT = args['--api-endpoint']
 
         if '--get-created-apps-with-steps' in args:
             run_exit_fn = False
@@ -64,12 +80,7 @@ if __name__ == "__main__":
             if ipc_client_instance is not None:
                 print({ 'db_data': get_created_apps_with_steps() }, type='info')
             else:
-                print('----------------------------------------------------------------------------------------')
-                print('app_id                                step                 dev_step  name')
-                print('----------------------------------------------------------------------------------------')
-                print('\n'.join(f"{app['id']}: {app['status']:20}      "
-                                f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
-                                f"  {app['name']}" for app in get_created_apps_with_steps()))
+                print_table(get_created_apps_with_steps())
 
         elif '--version' in args:
             print(get_version())
@@ -80,37 +91,23 @@ if __name__ == "__main__":
             run_test(args['--ux-test'], args)
             run_exit_fn = False
         else:
-            if settings.telemetry is None:
-                telemetry.setup()
-                loader.save("telemetry")
-
-            if args.get("app_id"):
-                telemetry.set("is_continuation", True)
-
-            if "email" in args:
-                telemetry.set("user_contact", args["email"])
-
-            if "extension_version" in args:
-                telemetry.set("extension_version", args["extension_version"])
+            handle_telemetry(project, {}, "success:exit")
 
             # TODO get checkpoint from database and fill the project with it
             project = Project(args, ipc_client_instance=ipc_client_instance)
             if project.check_ipc():
-                telemetry.set("is_extension", True)
-
-            started = project.start()
-            if started:
-                project.finish()
-                print('Thank you for using Pythagora!', type='ipc', category='pythagora')
-                telemetry.set("end_result", "success:exit")
-            else:
-                run_exit_fn = False
-                telemetry.set("end_result", "failure:api-error")
-                print('Exit', type='exit')
+                handle_telemetry(project, {}, "success:exit")
+                started = project.start()
+                if started:
+                    project.finish()
+                    print('Thank you for using Pythagora!', type='ipc', category='pythagora')
+                else:
+                    run_exit_fn = False
+                    handle_telemetry(project, {}, "failure:api-error")
+                    print('Exit', type='exit')
 
     except (ApiError, TokenLimitError) as err:
-        telemetry.record_crash(err, end_result="failure:api-error")
-        telemetry.send()
+        handle_telemetry(project, err, "failure:api-error")
         run_exit_fn = False
         if isinstance(err, TokenLimitError):
             print('', type='verbose', category='error')
@@ -123,9 +120,9 @@ if __name__ == "__main__":
         print('Exit', type='exit')
 
     except KeyboardInterrupt:
-        telemetry.set("end_result", "interrupt")
+        handle_telemetry(project, {}, "interrupt")
         if project is not None and project.check_ipc():
-            telemetry.send()
+            handle_telemetry(project, {}, "interrupt")
             run_exit_fn = False
 
     except GracefulExit:
@@ -140,7 +137,7 @@ if __name__ == "__main__":
         traceback.print_exc()
         print(color_red('--------------------------------------------------'))
         ask_feedback = False
-        telemetry.record_crash(err)
+        handle_telemetry(project, err, "failure:unknown")
 
     finally:
         if project is not None:
@@ -150,3 +147,13 @@ if __name__ == "__main__":
             project.finish_loading(do_cleanup=False)
         if run_exit_fn:
             exit_gpt_pilot(project, ask_feedback)
+
+# Added a new function to print the table
+def print_table(data: List[Dict[str, Any]]):
+    print('----------------------------------------------------------------------------------------')
+    print('app_id                                step                 dev_step  name')
+    print('----------------------------------------------------------------------------------------')
+    for app in data:
+        print(f"{app['id']}: {app['status']:20}      "
+              f"{'' if len(app['development_steps']) == 0 else app['development_steps'][-1]['id']:3}"
+              f"  {app['name']}")
