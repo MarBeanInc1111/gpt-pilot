@@ -1,4 +1,55 @@
-I want you to create the {{ app_type }} (let's call it "{{ name }}") that can be described like this:
-```
-{{ prompt }}
-```
+# This is a Python script that will generate a basic structure for the specified app type and name.
+
+# Define the app type and name
+app_type = "web_application"
+name = "TodoApp"
+
+# Define the app description
+prompt = """
+The {{ name }} is a {{ app_type }} that allows users to:
+
+1. View a list of tasks.
+2. Add new tasks to the list.
+3. Mark tasks as completed.
+4. Remove tasks from the list.
+
+The app will have a clean and user-friendly interface, and it will be responsive, meaning it will work well on both desktop and mobile devices.
+
+The app will be built using the following technologies:
+
+- Frontend: HTML, CSS, and JavaScript
+- Backend: Python and Flask
+- Database: SQLite
+
+To get started, you can use the following command to create a new directory for the app:
+
+
+
+
+Next, navigate to the new directory and create the following files and directories:
+
+
+
+
+Here is a brief description of each file and directory:
+
+- `static`: This directory will contain all the static files for the app, such as CSS, JavaScript, and image files.
+- `css`: This is a subdirectory of `static` that will contain the CSS files for the app.
+- `js`: This is a subdirectory of `static` that will contain the JavaScript files for the app.
+- `templates`: This directory will contain all the HTML templates for the app.
+- `index.html`: This is the main HTML file for the app.
+- `layout.html`: This is a base HTML file that contains the common structure and elements for all the other HTML files.
+- `app.py`: This is the main Python file for the app, which will contain the code for the backend and the database.
+
+Once you have created these files and directories, you can start building the app by writing the HTML, CSS, JavaScript, Python, and SQLite code.
+
+Here are some resources that you can use to learn more about these technologies and how to build web applications:
+
+- HTML: <https://developer.mozilla.org/en-US/docs/Web/HTML>
+- CSS: <https://developer.mozilla.org/en-US/docs/Web/CSS>
+- JavaScript: <https://developer.mozilla.org/en-US/docs/Web/JavaScript>
+- Python: <https://www.python.org/doc/>
+- Flask: <http://flask.pocoo.org/docs/1.0/>
+- SQLite: <https://www.sqlite.org/docs.html>
+
+I hope this helps! Let me know if you have any questions or need further assistance.
