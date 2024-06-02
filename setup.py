@@ -1,8 +1,11 @@
 from setuptools import setup
 
 VERSION = "0.1.3"
+requirements_dir = "."
 
-requirements = open("requirements.txt").readlines()
+requirements = [
+    req.strip() for req in open(f"{requirements_dir}/requirements.txt").readlines()
+]
 
 if __name__ == "__main__":
     setup(
@@ -23,4 +26,8 @@ if __name__ == "__main__":
         ],
         install_requires=requirements,
         python_requires='>=3.9',
+        zip_safe=False,
+        package_data={
+            'pilot': ['data/*'],
+        },
     )
