@@ -17,6 +17,54 @@ PROJECT_TEMPLATES = {
 }
 
 
+def render_and_save_files(
+    template: dict,
+    project_name: str,
+    project_description: str,
+    root_path: str,
+) -> list:
+    """
+    Render and save files from a given template.
+
+    :param template: the project template
+    :param project_name: the name of the project
+    :param project_description: the description of the project
+    :param root_path: the root path of the project
+    :return: a list of project files
+    """
+    r = Renderer(os.path.join(os.path.dirname(__file__), "tpl"))
+    files = r.render_tree(template["path"], {
+        "project_name": project_name,
+        "project_description": project_description,
+        "random_secret": str(uuid4()),
+    })
+
+    project_files = []
+
+    for file_name, file_content in files.items():
+        full_path = os.path.join(root_path, file_name)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+        try:
+            with open(full_path, "w", encoding="utf-8") as f:
+                f.write(file_content)
+        except Exception as err:
+            logger.error(
+                f"Error saving file '{file_name}': {err}",
+                exc_info=True,
+            )
+            continue
+
+        rel_dir = os.path.dirname(file_name)
+        project_files.append({
+            "name": os.path.basename(file_name),
+            "path": "/" if rel_dir in ["", "."] else rel_dir,
+            "content": file_content,
+        })
+
+    return project_files
+
+
 def apply_project_template(
     project: "Project",
 ) -> Optional[str]:
@@ -25,12 +73,6 @@ def apply_project_template(
 
     :param project: the project object
     :return: a summary of the applied template, or None if no template was applied
-
-    If project.project_template is None (not selected), or not one of the supported
-    templates, do nothing.
-
-    Note: the template summary is injected in the project description, and the
-    created files are saved to a snapshot of the last development step (LLM request).
     """
     template_name = project.project_template
     if not template_name or template_name not in PROJECT_TEMPLATES:
@@ -43,34 +85,7 @@ def apply_project_template(
     template = PROJECT_TEMPLATES[template_name]
     install_hook = template.get("install_hook")
 
-    r = Renderer(
-        os.path.join(os.path.dirname(__file__), "tpl")
-    )
-
-    files = r.render_tree(
-        template["path"],
-        {
-            "project_name": project_name,
-            "project_description": project_description,
-            "random_secret": uuid4().hex,
-        },
-    )
-
-    project_files = []
-
-    for file_name, file_content in files.items():
-        full_path = os.path.join(root_path, file_name)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, "w", encoding="utf-8") as f:
-            f.write(file_content)
-
-        rel_dir = os.path.dirname(file_name)
-        project_files.append({
-            "name": os.path.basename(file_name),
-             # ensure the path is compatible with how the rest of GPT Pilot thinks about paths
-            "path": "/" if rel_dir in ["", "."] else rel_dir,
-            "content": file_content,
-        })
+    project_files = render_and_save_files(template, project_name, project_description, root_path)
 
     print(color_green_bold(f"Applying project template {template['description']}...\n"))
     logger.info(f"Applying project template {template_name}...")
@@ -79,15 +94,15 @@ def apply_project_template(
     if last_development_step:
         project.save_files_snapshot(last_development_step['id'])
 
-    try:
-        if install_hook:
+    if install_hook:
+        try:
             install_hook(project)
-    except Exception as err:
-        logger.info(
-            f"Error running install hook for project template '{template_name}': {err}",
-            exc_info=True,
-        )
+        except Exception as err:
+            logger.info(
+                f"Error running install hook for project template '{template_name}': {err}",
+                exc_info=True,
+            )
 
     trace_code_event('project-template', {'template': template_name})
-    summary = "The code so far includes:\n" + template["summary"]
+    summary = f"The code so far includes:\n{template['summary']}"
     return summary
