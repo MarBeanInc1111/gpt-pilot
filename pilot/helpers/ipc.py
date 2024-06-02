@@ -7,15 +7,20 @@ from utils.utils import json_serial
 
 class IPCClient:
     def __init__(self, port):
-        self.ready = False
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.port = port
+        self.client = None
+        self.connected = False
+
+    def connect(self):
+        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         print("Connecting to the external process...")
         try:
-            client.connect(('localhost', int(port)))
-            self.client = client
+            self.client.connect(('localhost', self.port))
+            self.connected = True
             print("Connected!")
         except ConnectionRefusedError:
             self.client = None
+            self.connected = False
             print("Connection refused, make sure you started the external process")
 
     def handle_request(self, message_content):
@@ -23,30 +28,31 @@ class IPCClient:
         return message_content  # For demonstration, we're just echoing back the content
 
     def listen(self):
-        if self.client is None:
+        if not self.connected:
+            print("Not connected to the external process!")
+            return None
+
+        data = b''
+        while True:
+            try:
+                data = data + self.client.recv(512 * 1024)
+                message = json.loads(data)
+                break
+            except json.JSONDecodeError:
+                # This means we still got an incomplete message, so
+                # we should continue to receive more data.
+                continue
+
+        if message.get('type') == 'response':
+            # self.client.close()
+            return message.get('content')
+
+    def send(self, data):
+        if not self.connected:
             print("Not connected to the external process!")
             return
 
-        while True:
-
-            data = b''
-            while True:
-                data = data + self.client.recv(512 * 1024)
-                try:
-                    message = json.loads(data)
-                    break
-                except json.JSONDecodeError:
-                    # This means we still got an incomplete message, so
-                    # we should continue to receive more data.
-                    continue
-
-            if message['type'] == 'response':
-                # self.client.close()
-                return message['content']
-
-    def send(self, data):
         serialized_data = json.dumps(data, default=json_serial)
-        data_length = len(serialized_data)
-        if self.client is not None:
-            self.client.sendall(data_length.to_bytes(4, byteorder='big'))
-            self.client.sendall(serialized_data.encode('utf-8'))
+        data_length = len(serialized_data).to_bytes(4, byteorder='big')
+        self.client.sendall(data_length)
+        self.client.sendall(serialized_data.encode('utf-8'))
