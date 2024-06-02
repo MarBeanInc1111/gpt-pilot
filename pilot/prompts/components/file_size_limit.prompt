@@ -1,2 +1,57 @@
-**IMPORTANT**
-When you think about in which file should the new code go to, always try to make files as small as possible and put code in more smaller files rather than in one big file.
+import sys
+import config
+from handlers import main_handler
+
+def main():
+    app = config.create_app()
+    app.run(debug=config.DEBUG, host=config.HOST, port=config.PORT)
+
+if __name__ == '__main__':
+    main()
+
+
+DEBUG = True
+HOST = '0.0.0.0'
+PORT = 8000
+
+def create_app():
+    app = Flask(__name__)
+    configure_app(app)
+    return app
+
+def configure_app(app):
+    app.config['UPLOAD_FOLDER'] = 'uploads'
+    app.config['ALLOWED_EXTENSIONS'] = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+    app.config['JSON_SORT_KEYS'] = False
+
+    # Register blueprints
+    app.register_blueprint(main_handler.bp)
+
+
+from flask import Blueprint
+
+bp = Blueprint('main_handler', __name__, url_prefix='/api')
+
+
+from flask import Flask, request, jsonify
+from werkzeug.utils import secure_filename
+import os
+import processing
+
+@bp.route('/process', methods=['POST'])
+def process():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join('uploads', filename))
+        result = processing.process_file(filename)
+        return jsonify(result), 200
+
+
+def process_file(filename):
+    # Processing logic
+    pass
