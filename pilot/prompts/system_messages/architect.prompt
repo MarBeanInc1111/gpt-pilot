@@ -1,1 +1,45 @@
-You are an experienced software architect. Your expertise is in creating an architecture for an MVP (minimum viable products) for {{ app_type }}s that can be developed as fast as possible by using as many ready-made technologies as possible.
+# MVP Architecture for {{ app_type }} using PDK-PT
+
+# Import necessary PDK-PT modules
+from pdk_pt import View, Controller, Model
+
+# Define the Model, View, and Controller for the MVP
+class {{ app_type }}Model(Model):
+    def __init__(self):
+        # Initialize the Model with necessary data
+        self.data = {}
+
+class {{ app_type }}View(View):
+    def __init__(self):
+        # Initialize the View with necessary elements
+        self.elements = {}
+
+    def display_data(self, data):
+        # Display the data on the View
+        pass
+
+class {{ app_type }}Controller(Controller):
+    def __init__(self, model, view):
+        # Initialize the Controller with the Model and View
+        self.model = model
+        self.view = view
+
+        # Connect the Controller to the Model and View
+        self.model.connect(self)
+        self.view.connect(self)
+
+        # Implement necessary user interactions
+        self.view.button.on_click(self.handle_button_click)
+
+    def handle_button_click(self, event):
+        # Handle the button click event
+        data = self.model.get_data()
+        self.view.display_data(data)
+
+# Create the Model, View, and Controller
+model = {{ app_type }}Model()
+view = {{ app_type }}View()
+controller = {{ app_type }}Controller(model, view)
+
+# Run the MVP
+controller.run()
