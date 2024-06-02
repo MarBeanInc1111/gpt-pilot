@@ -3,11 +3,11 @@ from database.models.components.progress_step import ProgressStep
 from database.models.components.sqlite_middlewares import JSONField
 from playhouse.postgres_ext import BinaryJSONField
 
+class UserStoriesJSONField:
+    def __init__(self):
+        self.field = None
+        if DATABASE_TYPE == 'postgres':
+            self.field = BinaryJSONField()
+        else:
+            self.field = JSONField()  # Custom JSON field for SQLite
 
-class UserStories(ProgressStep):
-    if DATABASE_TYPE == 'postgres':
-        user_stories = BinaryJSONField()
-    else:
-        user_stories = JSONField()  # Custom JSON field for SQLite
-    class Meta:
-        table_name = 'user_stories'
