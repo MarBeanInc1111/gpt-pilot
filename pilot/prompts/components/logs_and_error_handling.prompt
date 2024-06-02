@@ -1,5 +1,35 @@
-**IMPORTANT**: Logging
-Whenever you write code, make sure to log code execution so that when a developer looks at the CLI output, they can understand what is happening on the server. If the description above mentions the exact code that needs to be added but doesn't contain enough logs, you need to add the logs handlers inside that code yourself.
+import logging
 
-**IMPORTANT**: Error handling
-Whenever you write code, make sure to add error handling for all edge cases you can think of because this app will be used in production so there shouldn't be any crashes. Whenever you log the error, you **MUST** log the entire error message and trace and not only the error message. If the description above mentions the exact code that needs to be added but doesn't contain enough error handlers, you need to add the error handlers inside that code yourself.
+def some_function():
+    logger = logging.getLogger(__name__)
+
+    # Log that the function has started
+    logger.info("some_function started")
+
+    try:
+        # Code that may raise an exception
+        result = complicated_operation()
+
+        # Log the result
+        logger.info(f"some_function completed with result: {result}")
+
+        return result
+
+    except Exception as e:
+        # Log the entire error, including the traceback
+        logger.error("Error in some_function", exc_info=True)
+
+        # Raise the error so it can be handled at a higher level
+        raise
+
+def complicated_operation():
+    # Code that may raise an exception
+    raise Exception("An error occurred")
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M:%S')
+
+# Call the function
+some_function()
